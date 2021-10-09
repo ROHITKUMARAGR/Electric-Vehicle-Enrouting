@@ -13,44 +13,50 @@ class EVS{
     }
    
 // This function is to keep updated the waiting map. 
+map<int,int>NATS;//This will store the next time slot availabale.
 void update_the_waiting(int current_time){
      auto it=waiting.begin();
      while(it->second<current_time&&it!=waiting.end()){
          waiting.erase(it->first);
          it++;
      }
+     NATS=this->UTNTS();
 }
-pair<int,int>available_time_slot;//This will store the next time slot availabale.
-bool check_the_waiting_queue(int start_time,int end_time){
-    for(auto it=waiting.begin();it!=waiting.end();it++){
-          if(it->first>start_time&&it->second<end_time){
-              available_time_slot.first=it->first;
-              available_time_slot.second=it->second;
-              return true;
-          }
-          if(it->first>start_time)
-    }
-   
+
+map<int,int> UTNTS(){   //this function is used to update the next available time slot in the charging station.
+       map<int,int>ar;
+       auto it=waiting.begin();
+       auto it2=waiting.begin();
+       it2++;
+       while(it2!=waiting.end()){
+           if((it->second)-((it2)->first)>0){
+                 ar.insert({it->second,it2->first});
+           }
+           it++;
+           it2++;
+       }ar.insert({it->second,-1});
+       return ar;
+}
+
+pair<int,int> check_the_waiting_queue(int start_time,int end_time){    
+        for(auto it=NATS.begin();it!=NATS.end();it++){
+            if(it->first<start_time&&it->second>end_time){
+                return pair<int,int>(start_time,end_time);
+            }
+            if(it->first>end_time){
+                if((it->second-it->first)>(end_time-start_time)){
+                    return pair<int,int>(it->first,it->second);
+                }
+            }
+        }
+        
+}
+void book_the_cs(pair<int,int>value){
+          this->waiting.insert(value);
+          cout<<"Your booking has been done"<<endl;
 }
  
-bool book_the_CS(int starting_tinme,int end_time){
-    time_t now = time(0);
-    tm *ltm = localtime(&now);
-    int current_time=ltm->tm_hour;
-    update_the_waiting(current_time);
-    if(check_the_waiting_queue(current_time,end_time)){
 
-    }
-  } 
-
-void booked(int starting_time,int battery_percentage){ 
-    int end_time=starting_time+(((100-battery_percentage)/10)*5); //considering that the charging speed
-    if(book_the_CS(starting_time,end_time)){
-        cout<<"CS is booked for starting_t"<<endl;
-    }else{
-        cout<<"CS is not having any slot free"<<endl;
-    }
-}
 
 };
 
@@ -60,8 +66,20 @@ class node{
 };
 
 vector<int> BFS(unordered_map<int,node>&arru,int start_node){
-    stack<int>arrui;
+    queue<int>arrui;
     arrui.push(start_node);
+    vector<int>arruiya;
+    arruiya.push_back(start_node);
+    while(!arrui.empty()){
+         int value2=arrui.front();
+         arruiya.push_back(value2);
+         arrui.pop();
+         for(auto it=arru[value2].nbrs.begin();it!=arru[value2].nbrs.end();it++){
+             arrui.push(it->first);
+         }
+    }
+
+return arruiya;
 }
 int calculate_remaining_distance(int value){
      if(value==0){
@@ -86,7 +104,6 @@ int main(){
 vector<EVS>arru;//vector of charging station as object
 unordered_map<int,node>network;//This is our core graph
 int i;
-int node_num=0;
 do{
    cout<<"Press 1 if you want to add some new Charging Station"<<endl;
    cout<<"Press 2 if you want to do travel some from one point to the other"<<endl;
@@ -112,14 +129,14 @@ do{
    cout<<"Nodes have been succesfully inserted"<<endl;
    
 }
-      if(i==2){
-              cout<<"Enter the source point and the destination point"<<endl;
-              int sp,dp;
-              cin>>sp>>dp;
-              vector<int>journey_nodes=find_the_nodes(network,sp,dp);
+if(i==2){
+cout<<"Enter the source point and the destination point"<<endl;
+int sp,dp;
+cin>>sp>>dp;
+vector<int>journey_nodes=find_the_nodes(network,sp,dp);
+}
 
-      }
-      if(i==3){
+if(i==3){
               cout<<"Enter the station number where you are standing"<<endl;
               int cst;//current station  number 
               cin>>cst;
@@ -135,8 +152,7 @@ do{
                     nearest_distance_CS.insert({value2,*it});
                     }
                 }
-
-            map<int,int>next_time_slots;
+            unordered_map<int,pair<int,int>>available_slots;
             if(nearest_distance_CS.size()==0){
                   cout<<"Sorry we cannot help you beacuse you remaining charge cannot take you to any CS"<<endl;
             }else{
@@ -144,10 +160,23 @@ do{
                   tm *ltm = localtime(&now);
                   int current_time=ltm->tm_hour;
                   int end_time=((100-charge_percent)/100)*4;
+                  
                   for(auto it=nearest_distance_CS.begin();it!=nearest_distance_CS.end();it++){
                        arru[it->second].update_the_waiting(current_time);
-                      
+                       pair<int,int>hen=arru[it->second].check_the_waiting_queue(current_time,end_time);
+                       available_slots[it->second]=hen;
                     }
+            cout<<"These are the available time slots in the graph"<<endl;
+            for(auto it=available_slots.begin();it!=available_slots.end();it++){
+            pair<int,int>runa=it->second;
+            cout<<"Charging station number: "<<it->first<<"availabale time slot: "<<it->second.first<<it->second.second<<endl;
+            }
+            cout<<"Now enter the time station number in which you want to book the slot"<<endl;
+            int sn;
+            cin>>sn;
+            arru[sn].book_the_cs(available_slots[sn]);
+
+
             }
               
 
