@@ -1,4 +1,4 @@
-//This code is written under the guidance of Miss Dr.Jaishree Mayank under the design project course.
+//This code is written under the guidance of Dr.Jaishree Mayank under the design project course.
 //Team Members are:-
 //1.Anand Kumar
 //2.Mayank Kumar
@@ -8,14 +8,13 @@
 #include <bits/stdc++.h>
 using namespace std;
 //Class for the Charging Station
-int CS=0;
+int CS = 0;
 class EVS
 {
-     public:
-
+public:
     int station_number;
     // int charging_port;
-   
+
     map<int, int> waiting;
     EVS(int a)
     {
@@ -29,14 +28,20 @@ class EVS
     void update_the_waiting(int current_time)
     {
         auto it = waiting.begin();
-        while (it->second < current_time && it != waiting.end())
+        if (!waiting.empty())
         {
-            waiting.erase(it->first);
-            it++;
+            while (it->second < current_time && it != waiting.end())
+            {
+                waiting.erase(it->first);
+                it++;
+            }
+            NATS = this->Update_the_Next_Available_Time_Slot();
         }
-        NATS = this->Update_the_Next_Available_Time_Slot();
+        else
+        {
+            return;
+        }
     }
-
     map<int, int> Update_the_Next_Available_Time_Slot()
     { //this function is used to update the next available time slot in the charging station.
         map<int, int> ar;
@@ -60,16 +65,13 @@ class EVS
     {
         for (auto it = NATS.begin(); it != NATS.end(); it++)
         {
-            if (it->first < start_time && it->second > end_time)
+            if (it->first <= start_time && it->second >= end_time)
             {
                 return true;
             }
-            if (it->first > end_time)
+            if (it->second <= start_time)
             {
-                if ((it->second - it->first) > (end_time - start_time))
-                {
-                    return true;
-                }
+                return true;
             }
         }
         return false;
@@ -86,7 +88,6 @@ class node
 public:
     unordered_map<int, int> nbrs;
 };
-
 
 //Breadth First Traversal Algorithm
 vector<int> BFS(unordered_map<int, node> &arru, int start_node)
@@ -108,7 +109,7 @@ vector<int> BFS(unordered_map<int, node> &arru, int start_node)
 
     return arruiya;
 }
-//This function return the remaining distance the car can travel based upon the remaining charging station 
+//This function return the remaining distance the car can travel based upon the remaining charging station
 int calculate_remaining_distance(int value)
 {
     if (value == 0)
@@ -145,7 +146,7 @@ void find_the_path(unordered_map<int, node> &arru, int start, int end, int &valu
 }
 
 pair<int, vector<int>> find_the_nodes(unordered_map<int, node> &arru, int start, int end)
-{   // this function is used to find the nodes which will be
+{ // this function is used to find the nodes which will be
     //there in the shortest path
     vector<int> nodes_visited;
     vector<bool> isVisited(arru.size(), false);
@@ -169,32 +170,37 @@ int main()
         cin >> i;
         if (i == 1)
         {
-            cout << "Please enter the password if you want to insert any charging station into it" << endl; 
+            cout << "Please enter the password if you want to insert any charging station into it" << endl;
             int pass = 12345;
             int password;
             cin >> password;
             if (password == pass)
-            {   cout<<"How many Charging Station you want to insert"<<endl;
-                int number;cin>>number;
                 for(int a=0;a<number;a++){
                 node n1;
-                network.insert({CS,n1});
-                cout << "Enter the number of Charging Station which are adjacent to the given Charging Station number"<<CS<<endl;
-                int nv;
-                cin >> nv;
-                while (nv--)
+            {
+                cout << "How many Charging Station you want to insert" << endl;
+                int number;
+                cin >> number;
+                for (int a = 0; a < number; a++)
                 {
-                    cout << "Enter the nodes nearby value and then the weight associated with it" << endl;
-                    int node, weight;
-                    cin >> node >> weight;
-                    network[CS].nbrs.insert({node, weight});
+                    node n1;
+                    network.insert({CS, n1});
+                    cout << "Enter the number of Charging Station which are adjacent to the given Charging Station number" << CS << endl;
+                    int nv;
+                    cin >> nv;
+                    while (nv--)
+                    {
+                        cout << "Enter the nodes nearby value and then the weight associated with it" << endl;
+                        int node, weight;
+                        cin >> node >> weight;
+                        network[CS].nbrs.insert({node, weight});
+                    }
+
+                    EVS newer_node(CS);
+                    arru.push_back(newer_node);
+                    CS += 1;
                 }
-                
-                EVS newer_node(CS);
-                arru.push_back(newer_node);
-                CS+=1;
-                }
-                
+
                 cout << "Nodes have been succesfully inserted" << endl;
             }
             else
@@ -212,40 +218,69 @@ int main()
             int charge_percent;
             cin >> charge_percent;
             int remaining_distance = calculate_remaining_distance(charge_percent); // calculating the remaining distance the car can travel using the remaining charging percent.
-            vector<int> reachable_charging_station_in_journey;                     // this will store the charging station numbers which can be reached depending upon the remaining charging percent.
-            pair<int, vector<int>> arr = find_the_nodes(network, start, last);     //This will first help us to know the intermediate charging station which will come in
+            cout << "Remaining Distance it can travel is on the basis of left out charging of EV" << remaining_distance << endl;
+            vector<int> reachable_charging_station_in_journey;                 // this will store the charging station numbers which can be reached depending upon the remaining charging percent.
+            pair<int, vector<int>> arr = find_the_nodes(network, start, last); //This will first help us to know the intermediate charging station which will come in
             // journey from starting point to the destination point
+            cout << "These are  the charging station which will come in the route" << endl;
+            for (auto it5 = arr.second.begin(); it5 != arr.second.end(); it5++)
+            {
+                cout << *it5 << " ";
+            }
+            cout << endl;
             for (auto it4 = arr.second.begin(); it4 != arr.second.end(); it4++)
             {
                 pair<int, vector<int>> checking = find_the_nodes(network, start, *it4); //This loops checks all the intermediate nodes present in the journey and
-                if (checking.first < remaining_distance)
+                if (checking.first <= remaining_distance)
                 {                                                          // stations which are reachable are stored in the vector named
                     reachable_charging_station_in_journey.push_back(*it4); // reachable_charging_station_in_journey
                 }
             }
-            auto it = reachable_charging_station_in_journey.begin();
-            map<int, int> waiting_time;
-            while (it != arr.second.end())
+            cout << "These are the charging station where you can reach" << endl;
+            for (auto it6 = reachable_charging_station_in_journey.begin(); it6 != reachable_charging_station_in_journey.end(); it6++)
+            {
+                cout << *it6 << " ";
+            }
+            cout << endl;
+            auto it8 = reachable_charging_station_in_journey.begin();
+            map<int, int> waiting_time; // in this we will store the key as the waiting time and the value as the station number
+            while (it8 != reachable_charging_station_in_journey.end())
             {
                 time_t now = time(0);
                 tm *ltm = localtime(&now);
                 int current_time = ltm->tm_hour;
-                int end_time = ((100 - charge_percent) / 100) * 4;
-                arru[*it].update_the_waiting(current_time);
-                auto iterate = arru[*it].NATS.begin();
-                waiting_time.insert({iterate->first - current_time, *it});
-                it++;
+                int end_time = current_time + 1;
+                arru[*it8].update_the_waiting(current_time);
+                if (arru[*it8].NATS.size() > 0)
+                {
+                    auto iterate = arru[*it8].NATS.begin();
+                    waiting_time.insert({iterate->first - current_time, *it8});
+                    it8++;
+                }
+                else
+                {
+                    arru[*it8].NATS.insert({current_time, current_time + 1});
+                }
             }
+
             //This outputs those charging station which are in the in the route of our journey and its showing in the increasing order of waiting time. :)
             for (auto it2 = waiting_time.begin(); it2 != waiting_time.end(); it2++)
             {
-                cout << "Waiting time is " << it2->first << "for the station number" << it2->first << "and the other next available time slot are as follows:" << endl;
-                for (auto it3 = arru[it2->second].NATS.begin(); it3 != arru[it2->second].NATS.end(); it3++)
+                cout << "Waiting time is: " << it2->first << " for the station number: " << it2->second << "and the other next available time slot are as follows:" << endl;
+                if (arru[it2->second].NATS.size() != 0)
                 {
-                    cout << "Starting time:" << it3->first << "End Time:" << it3->second << endl;
+                    for (auto it3 = arru[it2->second].NATS.begin(); it3 != arru[it2->second].NATS.end(); it3++)
+                    {
+                        cout << "Starting time: " << it3->first << "End Time: " << it3->second << endl;
+                    }
+                }
+                else
+                {
+                    cout << "All the slots are free in the station number" << it2->second << "you can book any time for the day" << endl;
                 }
                 cout << "-------------------------------------------------------------" << endl;
             }
+
             cout << "Enter the charging station number on which you want to book the slot" << endl;
             int input;
             cin >> input;
@@ -290,17 +325,24 @@ int main()
                 time_t now = time(0);
                 tm *ltm = localtime(&now);
                 int current_time = ltm->tm_hour;
-                int end_time = ((100 - charge_percent) / 100) * 4;
+                int end_time = current_time + 1;
                 for (auto it2 = nearest_distance_CS.begin(); it2 != nearest_distance_CS.end(); it2++)
-            {
-                cout << "Waiting time is " << it2->first << "for the station number" << it2->first << "and the other next available time slot are as follows:" << endl;
-                for (auto it3 = arru[it2->second].NATS.begin(); it3 != arru[it2->second].NATS.end(); it3++)
                 {
-                    cout << "Starting time:" << it3->first << "End Time:" << it3->second << endl;
+                    cout << "Waiting time is " << it2->first << "for the station number" << it2->first << "and the other next available time slot are as follows:" << endl;
+                    if (arru[it2->second].NATS.size() != 0)
+                    {
+                        for (auto it3 = arru[it2->second].NATS.begin(); it3 != arru[it2->second].NATS.end(); it3++)
+                        {
+                            cout << "Starting time:" << it3->first << "End Time:" << it3->second << endl;
+                        }
+                    }
+                    else
+                    {
+                        cout << "All the slots are free in the station number" << it2->second << "you can book any time for the day" << endl;
+                    }
+                    cout << "-------------------------------------------------------------" << endl;
                 }
-                cout << "-------------------------------------------------------------" << endl;
-            }
-                
+
                 cout << "Enter the charging station number on which you want to book the slot" << endl;
                 int input;
                 cin >> input;
